@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>过磅单识别录入系统</title>
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+
+    <style>
+        /* ============ CSS变量与基础样式 ============ */
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #12122a;
+            --bg-card: #1a1a3a;
+            --bg-input: #0d0d25;
+            --color-primary: #00e676;
+            --color-primary-dark: #00c853;
+            --color-accent: #ff9100;
+            --color-danger: #ff5252;
+            --color-info: #448aff;
+            --color-text: #e8eaf6;
+            --color-text-dim: #9e9e9e;
+            --color-border: #2a2a5a;
+            --color-success: #69f0ae;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            color: var(--color-text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ============ 顶部导航栏 ============ */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--color-border);
+            padding: 12px 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-primary);
+            text-align: center;
+            flex: 1;
+            letter-spacing: 1px;
+        }
+
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-export {
+            background: var(--color-info);
+            color: #fff;
+        }
+
+        .btn-clear-all {
+            background: var(--color-danger);
+            color: #fff;
+        }
+
+        .btn-icon:active {
+            transform: scale(0.95);
+            opacity: 0.85;
+        }
+
+        /* ============ 统计栏 ============ */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .stat-item {
+            font-size: 14px;
+            color: var(--color-text-dim);
+        }
+
+        .stat-item strong {
+            color: var(--color-primary);
+            font-size: 18px;
+        }
+
+        /* ============ 主内容区 ============ */
+        .main {
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ============ 拍照按钮区域 ============ */
+        .camera-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 0;
+        }
+
+        .btn-capture {
+            width: 80%;
+            max-width: 320px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+            color: #000;
+            border: none;
+            border-radius: 20px;
+            font-size: 28px;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 6px 30px rgba(0, 230, 118, 0.35);
+            transition: all 0.2s;
+            letter-spacing: 2px;
+        }
+
+        .btn-capture:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 15px rgba(0, 230, 118, 0.25);
+        }
+
+        .btn-capture .icon {
+            font-size: 36px;
+        }
+
+        .secondary-row {
+            display: flex;
+            gap: 12px;
+            width: 80%;
+            max-width: 320px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 14px 10px;
+            background: var(--bg-card);
+            color: var(--color-text);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:active {
+            background: var(--color-border);
+            transform: scale(0.97);
+        }
+
+        /* ============ 进度条 ============ */
+        .progress-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--color-border);
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: var(--color-text);
+        }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 10px;
+            background: var(--bg-input);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        /* ============ 图片预览区 ============ */
+        .preview-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 12px;
+            border: 1px solid var(--color-border);
+        }
+
+        .preview-card canvas {
+            width: 100%;
+            border-radius: var(--radius-sm);
+            display: block;
+        }
+
+        .rotation-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-sm {
+            flex: 1;
+            padding: 10px 8px;
+            background: var(--bg-input);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-sm:active {
+            background: var(--color-border);
+            transform: scale(0.97);
+        }
+
+        /* ============ 识别结果编辑卡片 ============ */
+        .result-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow);
+        }
+
+        .result-card h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: var(--color-primary);
+        }
+
+        .result-card h2 small {
+            color: var(--color-text-dim);
+            font-size: 13px;
+            font-weight: 400;
+        }
+
+        .field-group {
+            margin-bottom: 14px;
+        }
+
+        .field-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-text-dim);
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .field-group input {
+            width: 100%;
+            padding: 14px 14px;
+            background: var(--bg-input);
+            color: var(--color-text);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 17px;
+            font-weight: 500;
+            outline: none;
+            transition: border-color 0.2s;
+            min-height: 50px;
+        }
+
+        .field-group input:focus {
+            border-color: var(--color-primary);
+        }
+
+        .field-group input.empty-field {
+            border-color: var(--color-danger);
+            background: rgba(255, 82, 82, 0.08);
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-save {
+            flex: 2;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+            color: #000;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            min-height: 56px;
+            transition: all 0.2s;
+        }
+
+        .btn-discard {
+            flex: 1;
+            padding: 16px;
+            background: var(--bg-input);
+            color: var(--color-text-dim);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 56px;
+            transition: all 0.2s;
+        }
+
+        .btn-save:active {
+            transform: scale(0.97);
+        }
+
+        .btn-discard:active {
+            background: var(--color-danger);
+            color: #fff;
+            border-color: var(--color-danger);
+        }
+
+        /* ============ 已保存记录列表 ============ */
+        .records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .records-header h2 {
+            font-size: 17px;
+            color: var(--color-text);
+        }
+
+        .records-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .record-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 14px;
+            border: 1px solid var(--color-border);
+            position: relative;
+        }
+
+        .record-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .record-number {
+            font-size: 12px;
+            color: var(--color-info);
+            font-weight: 600;
+        }
+
+        .record-date {
+            font-size: 12px;
+            color: var(--color-text-dim);
+        }
+
+        .btn-delete-record {
+            background: none;
+            border: 1px solid var(--color-danger);
+            color: var(--color-danger);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-delete-record:active {
+            background: var(--color-danger);
+            color: #fff;
+        }
+
+        .record-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 16px;
+        }
+
+        .record-field {
+            font-size: 14px;
+        }
+
+        .record-field .rf-label {
+            color: var(--color-text-dim);
+            font-size: 11px;
+        }
+
+        .record-field .rf-value {
+            color: var(--color-text);
+            font-weight: 600;
+        }
+
+        .empty-tip {
+            text-align: center;
+            color: var(--color-text-dim);
+            padding: 40px 20px;
+            font-size: 15px;
+        }
+
+        /* ============ Toast通知 ============ */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 14px 28px;
+            border-radius: var(--radius);
+            font-size: 15px;
+            font-weight: 600;
+            z-index: 9999;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background: var(--color-primary);
+            color: #000;
+        }
+
+        .toast.error {
+            background: var(--color-danger);
+            color: #fff;
+        }
+
+        .toast.info {
+            background: var(--color-info);
+            color: #fff;
+        }
+
+        /* ============ 确认对话框 ============ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px 20px;
+            max-width: 340px;
+            width: 100%;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .modal-box p {
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            min-height: 50px;
+        }
+
+        .modal-cancel {
+            background: var(--bg-input);
+            color: var(--color-text-dim);
+            border: 1px solid var(--color-border) !important;
+        }
+
+        .modal-confirm {
+            background: var(--color-danger);
+            color: #fff;
+        }
+
+        /* ============ 滚动条美化 ============ */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 2px;
+        }
+
+        /* ============ 响应式优化 ============ */
+        @media (min-width: 600px) {
+            .main {
+                max-width: 500px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============ 顶部导航栏 ============ -->
+    <header class="header">
+        <div class="header-row">
+            <button class="btn-icon btn-export" id="btnExport">📥 导出Excel</button>
+            <span class="header-title">📋 过磅单录入</span>
+            <button class="btn-icon btn-clear-all" id="btnClearAll">🗑️ 清空</button>
+        </div>
+    </header>
+
+    <!-- ============ 统计栏 ============ -->
+    <div class="stats-bar">
+        <span class="stat-item">已录入 <strong id="totalCount">0</strong> 条</span>
+        <span class="stat-item">总净重 <strong id="totalWeight">0</strong> kg</span>
+    </div>
+
+    <!-- ============ 主内容区 ============ -->
+    <main class="main">
+
+        <!-- 拍照区域 -->
+        <section id="secCamera" class="section camera-section">
+            <button class="btn-capture" id="btnCamera">
+                <span class="icon">📸</span>
+                <span>拍照识别</span>
+            </button>
+            <div class="secondary-row">
+                <button class="btn-secondary" id="btnAlbum">🖼️ 相册选择</button>
+                <button class="btn-secondary" id="btnBatch">📚 批量导入</button>
+            </div>
+        </section>
+
+        <!-- 进度区域 -->
+        <section id="secProgress" class="section hidden">
+            <div class="progress-card">
+                <div class="progress-text" id="progressText">正在准备识别引擎...</div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 图片预览区域 -->
+        <section id="secPreview" class="section hidden">
+            <div class="preview-card">
+                <canvas id="previewCanvas"></canvas>
+                <div class="rotation-row">
+                    <button class="btn-sm" id="btnRotL">↺ 左旋90°</button>
+                    <button class="btn-sm" id="btnRotR">↻ 右旋90°</button>
+                    <button class="btn-sm" id="btnRetry">🔄 重拍</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 识别结果编辑区域 -->
+        <section id="secResult" class="section hidden">
+            <div class="result-card">
+                <h2>识别结果 <small>（请核对并修改）</small></h2>
+
+                <div class="field-group">
+                    <label>📅 日期</label>
+                    <input type="text" id="fDate" placeholder="如: 2026-05-18" inputmode="text">
+                </div>
+                <div class="field-group">
+                    <label>🔢 编号</label>
+                    <input type="text" id="fNumber" placeholder="如: A202605180006" inputmode="text">
+                </div>
+                <div class="field-group">
+                    <label>📦 货物名称</label>
+                    <input type="text" id="fCargo" placeholder="如: 砂" inputmode="text">
+                </div>
+                <div class="field-group">
+                    <label>⚖️ 净重 (kg)</label>
+                    <input type="text" id="fWeight" placeholder="如: 48220" inputmode="numeric">
+                </div>
+                <div class="field-group">
+                    <label>🚛 车牌号</label>
+                    <input type="text" id="fPlate" placeholder="如: 浙CC2571" inputmode="text">
+                </div>
+                <div class="field-group">
+                    <label>📏 规格型号</label>
+                    <input type="text" id="fSpec" placeholder="如: 0-5mm" inputmode="text">
+                </div>
+
+                <div class="result-actions">
+                    <button class="btn-save" id="btnSave">✅ 保存并继续</button>
+                    <button class="btn-discard" id="btnDiscard">✗ 放弃</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 已保存记录列表 -->
+        <section id="secRecords" class="section">
+            <div class="records-header">
+                <h2>📋 已保存记录</h2>
+            </div>
+            <div class="records-list" id="recordsList">
+                <p class="empty-tip">暂无记录，请拍照开始录入</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast通知 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="fileCamera" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="fileAlbum" accept="image/*" style="display:none">
+    <input type="file" id="fileBatch" accept="image/*" multiple style="display:none">
+
+    <!-- ============ 外部依赖库 ============ -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <script>
+    /* ================================================================
+     *  过磅单识别录入系统 - 全部业务逻辑
+     * ================================================================ */
+
+    // ============ 常量与全局状态 ============
+    const STORAGE_KEY = 'pound_slips_records';
+
+    let ocrWorker = null;        // Tesseract worker（复用，避免重复加载语言包）
+    let currentImageData = null; // 当前待识别的图片 canvas
+    let isProcessing = false;    // 是否正在识别中
+    let batchQueue = [];         // 批量导入队列
+
+    // DOM 引用缓存
+    const $ = id => document.getElementById(id);
+    const DOM = {
+        secCamera: $('secCamera'),
+        secProgress: $('secProgress'),
+        secPreview: $('secPreview'),
+        secResult: $('secResult'),
+        progressText: $('progressText'),
+        progressFill: $('progressFill'),
+        previewCanvas: $('previewCanvas'),
+        fDate: $('fDate'),
+        fNumber: $('fNumber'),
+        fCargo: $('fCargo'),
+        fWeight: $('fWeight'),
+        fPlate: $('fPlate'),
+        fSpec: $('fSpec'),
+        recordsList: $('recordsList'),
+        totalCount: $('totalCount'),
+        totalWeight: $('totalWeight'),
+        toast: $('toast'),
+        fileCamera: $('fileCamera'),
+        fileAlbum: $('fileAlbum'),
+        fileBatch: $('fileBatch'),
+    };
+
+    // ============ 初始化 ============
+    document.addEventListener('DOMContentLoaded', () => {
+        loadRecords();
+        bindEvents();
+    });
+
+    /** 绑定所有事件 */
+    function bindEvents() {
+        // 拍照 / 相册 / 批量
+        $('btnCamera').addEventListener('click', () => DOM.fileCamera.click());
+        $('btnAlbum').addEventListener('click', () => DOM.fileAlbum.click());
+        $('btnBatch').addEventListener('click', () => DOM.fileBatch.click());
+
+        DOM.fileCamera.addEventListener('change', handleFileSingle);
+        DOM.fileAlbum.addEventListener('change', handleFileSingle);
+        DOM.fileBatch.addEventListener('change', handleFileBatch);
+
+        // 图片旋转 & 重拍
+        $('btnRotL').addEventListener('click', () => rotateImage(-90));
+        $('btnRotR').addEventListener('click', () => rotateImage(90));
+        $('btnRetry').addEventListener('click', resetToCamera);
+
+        // 保存 & 放弃
+        $('btnSave').addEventListener('click', saveRecord);
+        $('btnDiscard').addEventListener('click', () => {
+            if (batchQueue.length > 0) {
+                processNextBatch();
+            } else {
+                resetToCamera();
+            }
+        });
+
+        // 导出 & 清空
+        $('btnExport').addEventListener('click', exportExcel);
+        $('btnClearAll').addEventListener('click', confirmClearAll);
+    }
+
+    // ============ 文件处理 ============
+
+    /** 单张图片处理 */
+    function handleFileSingle(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        loadImageFile(file).then(() => {
+            runOCR();
+        });
+        e.target.value = ''; // 重置，允许重复选择同一文件
+    }
+
+    /** 批量图片处理 */
+    function handleFileBatch(e) {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        batchQueue = files;
+        e.target.value = '';
+        processNextBatch();
+    }
+
+    /** 处理批量队列中的下一张 */
+    function processNextBatch() {
+        if (batchQueue.length === 0) {
+            resetToCamera();
+            showToast('批量导入完成！', 'success');
+            return;
+        }
+        const file = batchQueue.shift();
+        loadImageFile(file).then(() => {
+            runOCR();
+        });
+    }
+
+    /** 将图片文件加载到 Canvas 中 */
+    function loadImageFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // 限制最大尺寸，提升OCR速度
+                    const MAX = 2000;
+                    let w = img.width, h = img.height;
+                    if (w > MAX || h > MAX) {
+                        const scale = MAX / Math.max(w, h);
+                        w = Math.round(w * scale);
+                        h = Math.round(h * scale);
+                    }
+                    const canvas = DOM.previewCanvas;
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    // 保存当前图片用于旋转
+                    currentImageData = ctx.getImageData(0, 0, w, h);
+
+                    showSection('preview');
+                    resolve();
+                };
+                img.onerror = () => reject(new Error('图片加载失败'));
+                img.src = e.target.result;
+            };
+            reader.onerror = () => reject(new Error('文件读取失败'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ============ 图片旋转 ============
+
+    /** 旋转图片 */
+    function rotateImage(angle) {
+        const canvas = DOM.previewCanvas;
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // 创建临时 canvas 保存当前图片
+        const tmp = document.createElement('canvas');
+        tmp.width = canvas.width;
+        tmp.height = canvas.height;
+        tmp.getContext('2d').putImageData(imgData, 0, 0);
+
+        // 旋转（90度倍数）
+        if (Math.abs(angle) === 90) {
+            canvas.width = tmp.height;
+            canvas.height = tmp.width;
+        }
+
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(angle * Math.PI / 180);
+        ctx.drawImage(tmp, -tmp.width / 2, -tmp.height / 2);
+        ctx.restore();
+
+        currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+
+    // ============ OCR 识别 ============
+
+    /** 获取或创建 Tesseract Worker */
+    async function getOCRWorker() {
+        if (ocrWorker) return ocrWorker;
+        updateProgress('正在加载识别引擎（首次需下载语言包，请稍候）...', 5);
+        ocrWorker = await Tesseract.createWorker('chi_sim+eng', 1, {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    updateProgress('正在识别文字...', Math.round(m.progress * 100));
+                } else if (m.status === 'loading language traineddata') {
+                    updateProgress('正在下载语言包...', Math.round(m.progress * 100));
+                } else if (m.status) {
+                    updateProgress(m.status, Math.round((m.progress || 0) * 100));
+                }
+            },
+            // 使用 jsDelivr 加速语言包下载
+            langPath: 'https://cdn.jsdelivr.net/gh/naptha/tessdata@4.0.0/best',
+        });
+        return ocrWorker;
+    }
+
+    /** 执行 OCR 识别 */
+    async function runOCR() {
+        if (isProcessing) return;
+        isProcessing = true;
+        showSection('progress');
+
+        try {
+            // 图像预处理
+            updateProgress('正在预处理图片...', 10);
+            const processedCanvas = preprocessImage(DOM.previewCanvas);
+
+            // OCR 识别
+            const worker = await getOCRWorker();
+            updateProgress('正在识别文字...', 20);
+            const { data: { text } } = await worker.recognize(processedCanvas);
+
+            console.log('OCR识别原文：\n', text);
+
+            // 提取字段
+            updateProgress('正在提取字段...', 95);
+            extractFields(text);
+
+            showSection('result');
+            updateProgress('识别完成！', 100);
+        } catch (err) {
+            console.error('OCR失败:', err);
+            showToast('识别失败，请重新拍照或手动输入', 'error');
+            // 仍然显示结果区域，让用户手动填写
+            clearFields();
+            showSection('result');
+        } finally {
+            isProcessing = false;
+        }
+    }
+
+    // ============ 图像预处理 ============
+
+    /** 对图片进行灰度化+对比度增强+二值化，提升OCR准确率 */
+    function preprocessImage(sourceCanvas) {
+        const w = sourceCanvas.width;
+        const h = sourceCanvas.height;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(sourceCanvas, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+        const len = data.length;
+
+        // 1. 灰度化
+        for (let i = 0; i < len; i += 4) {
+            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            data[i] = data[i + 1] = data[i + 2] = gray;
+        }
+
+        // 2. 对比度增强
+        const contrast = 60;
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+        for (let i = 0; i < len; i += 4) {
+            for (let c = 0; c < 3; c++) {
+                data[i + c] = Math.min(255, Math.max(0, factor * (data[i + c] - 128) + 128));
+            }
+        }
+
+        // 3. Otsu 自适应二值化
+        const histogram = new Array(256).fill(0);
+        const totalPixels = w * h;
+        for (let i = 0; i < len; i += 4) {
+            histogram[Math.round(data[i])]++;
+        }
+
+        let sum = 0;
+        for (let i = 0; i < 256; i++) sum += i * histogram[i];
+        let sumB = 0, wB = 0, maxVar = 0, threshold = 128;
+        for (let t = 0; t < 256; t++) {
+            wB += histogram[t];
+            if (wB === 0) continue;
+            const wF = totalPixels - wB;
+            if (wF === 0) break;
+            sumB += t * histogram[t];
+            const mB = sumB / wB;
+            const mF = (sum - sumB) / wF;
+            const variance = wB * wF * (mB - mF) * (mB - mF);
+            if (variance > maxVar) {
+                maxVar = variance;
+                threshold = t;
+            }
+        }
+
+        for (let i = 0; i < len; i += 4) {
+            const val = data[i] > threshold ? 255 : 0;
+            data[i] = data[i + 1] = data[i + 2] = val;
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        return canvas;
+    }
+
+    // ============ 字段提取（核心逻辑） ============
+
+    /**
+     * 从OCR文本中智能提取6个字段
+     * 针对葛洲坝第二工程有限公司过磅单格式优化
+     */
+    function extractFields(text) {
+        // 清理OCR文本，统一常见错误
+        const clean = text
+            .replace(/[（(]/g, '(')
+            .replace(/[）)]/g, ')')
+            .replace(/[：:]/g, ':')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        console.log('清理后文本：\n', clean);
+
+        const date = extractDate(clean);
+        const number = extractNumber(clean);
+        const cargo = extractCargo(clean);
+        const weight = extractWeight(clean);
+        const plate = extractPlate(clean);
+        const spec = extractSpec(clean);
+
+        DOM.fDate.value = date;
+        DOM.fNumber.value = number;
+        DOM.fCargo.value = cargo;
+        DOM.fWeight.value = weight;
+        DOM.fPlate.value = plate;
+        DOM.fSpec.value = spec;
+
+        // 标记未提取到的字段
+        highlightEmptyFields();
+    }
+
+    /** 提取日期 */
+    function extractDate(text) {
+        // 尝试多种日期格式
+        const patterns = [
+            /(\d{4})\s*[-/年.]\s*(\d{1,2})\s*[-/月.]\s*(\d{1,2})\s*[日号]?/,
+            /日期\s*[:：]?\s*(\d{4})\s*[-/年.]\s*(\d{1,2})\s*[-/月.]\s*(\d{1,2})/,
+        ];
+        for (const p of patterns) {
+            const m = text.match(p);
+            if (m) {
+                const y = m[1];
+                const mo = m[2].padStart(2, '0');
+                const d = m[3].padStart(2, '0');
+                return `${y}-${mo}-${d}`;
+            }
+        }
+        return '';
+    }
+
+    /** 提取编号 */
+    function extractNumber(text) {
+        // 葛洲坝过磅单编号格式: A202605180006
+        const patterns = [
+            /编\s*号\s*[:：]?\s*([A-Za-z]?\d{6,20})/,
+            /([A-Z]\d{4,8}\d{4,8})/,  // 如 A202605180006
+            /单\s*号\s*[:：]?\s*([A-Za-z]?\d{6,20})/,
+        ];
+        for (const p of patterns) {
+            const m = text.match(p);
+            if (m) return m[1].toUpperCase();
+        }
+        return '';
+    }
+
+    /** 提取货物名称 */
+    function extractCargo(text) {
+        const patterns = [
+            /(?:货物名称|品名|货物|材料名称)\s*[:：]?\s*([^\s\d]{1,10})/,
+            /货物\s*[:：]?\s*([^\s\d]{1,10})/,
+        ];
+        for (const p of patterns) {
+            const m = text.match(p);
+            if (m) {
+                // 清理可能的乱码尾部
+                let val = m[1].replace(/[^一-龥a-zA-Z]/g, '');
+                if (val.length >= 1) return val;
+            }
+        }
+        return '';
+    }
+
+    /** 提取净重 */
+    function extractWeight(text) {
+        const patterns = [
+            /净\s*重\s*[:：]?\s*([\d,，.]+)/,
+            /净\s*重\s*[:：]?\s*([\d,，.]+)\s*[kKgG吨]/,
+            /(?:净重|净量)\s*[:：]?\s*([\d,，.]+)/,
+        ];
+        for (const p of patterns) {
+            const m = text.match(p);
+            if (m) {
+                const num = m[1].replace(/[，,]/g, '');
+                // 验证数字合理性
+                const n = parseFloat(num);
+                if (n > 0 && n < 999999) return String(Math.round(n));
+            }
+        }
+        return '';
+    }
+
+    /** 提取车牌号 */
+    function extractPlate(text) {
+        // 中国车牌正则（支持普通车牌和新能源车牌）
+        const provinces = '京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤川青藏琼宁';
+        const p = new RegExp(
+            '[' + provinces + '][A-HJ-NP-Z][A-HJ-NP-Z0-9]{4,5}[A-HJ-NP-Z0-9挂学警港澳]?'
+        );
+        const m = text.match(p);
+        if (m) return m[0].toUpperCase();
+
+        // 宽松匹配（OCR可能把汉字识别错）
+        const loose = /[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤川青藏琼宁]\s*[A-Za-z]\s*[A-Za-z0-9]\s*[A-Za-z0-9]\s*[A-Za-z0-9]\s*[A-Za-z0-9]/;
+        const m2 = text.match(loose);
+        if (m2) return m2[0].replace(/\s/g, '').toUpperCase();
+
+        return '';
+    }
+
+    /** 提取规格型号 */
+    function extractSpec(text) {
+        const patterns = [
+            /(?:规格型号|规格|型号)\s*[:：]?\s*([^\s]{1,20})/,
+            /(\d+\s*[-—–]\s*\d+\s*(?:mm|厘米|M|CM)?)/i,
+        ];
+        for (const p of patterns) {
+            const m = text.match(p);
+            if (m) {
+                let val = m[1].trim();
+                // 清理尾部可能的多余字符
+                val = val.replace(/[，,。.；;]$/, '');
+                if (val.length >= 1) return val;
+            }
+        }
+        return '';
+    }
+
+    /** 高亮空字段提醒用户填写 */
+    function highlightEmptyFields() {
+        const fields = [DOM.fDate, DOM.fNumber, DOM.fCargo, DOM.fWeight, DOM.fPlate, DOM.fSpec];
+        fields.forEach(f => {
+            if (!f.value.trim()) {
+                f.classList.add('empty-field');
+            } else {
+                f.classList.remove('empty-field');
+            }
+        });
+    }
+
+    /** 清空所有字段 */
+    function clearFields() {
+        DOM.fDate.value = '';
+        DOM.fNumber.value = '';
+        DOM.fCargo.value = '';
+        DOM.fWeight.value = '';
+        DOM.fPlate.value = '';
+        DOM.fSpec.value = '';
+        const fields = [DOM.fDate, DOM.fNumber, DOM.fCargo, DOM.fWeight, DOM.fPlate, DOM.fSpec];
+        fields.forEach(f => f.classList.remove('empty-field'));
+    }
+
+    // ============ 数据管理（localStorage）============
+
+    /** 获取所有记录 */
+    function getRecords() {
+        try {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    /** 保存所有记录 */
+    function setRecords(records) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        } catch (e) {
+            showToast('存储空间已满，请导出后清空数据', 'error');
+        }
+    }
+
+    /** 保存当前记录 */
+    function saveRecord() {
+        const record = {
+            id: Date.now(),
+            date: DOM.fDate.value.trim(),
+            number: DOM.fNumber.value.trim(),
+            cargo: DOM.fCargo.value.trim(),
+            weight: DOM.fWeight.value.trim(),
+            plate: DOM.fPlate.value.trim(),
+            spec: DOM.fSpec.value.trim(),
+            createdAt: new Date().toISOString(),
+        };
+
+        // 检查是否有必填字段为空
+        const emptyFields = [];
+        if (!record.date) emptyFields.push('日期');
+        if (!record.number) emptyFields.push('编号');
+        if (!record.cargo) emptyFields.push('货物名称');
+        if (!record.weight) emptyFields.push('净重');
+        if (!record.plate) emptyFields.push('车牌号');
+        if (!record.spec) emptyFields.push('规格型号');
+
+        if (emptyFields.length > 0) {
+            const proceed = confirm(`以下字段为空：${emptyFields.join('、')}\n\n是否仍然保存？`);
+            if (!proceed) return;
+        }
+
+        const records = getRecords();
+        records.push(record);
+        setRecords(records);
+
+        showToast('✅ 保存成功！', 'success');
+        renderRecords();
+
+        // 如果有批量队列，继续处理下一张
+        if (batchQueue.length > 0) {
+            processNextBatch();
+        } else {
+            // 核心需求：保存后立即回到拍照界面
+            resetToCamera();
+        }
+    }
+
+    /** 删除单条记录 */
+    function deleteRecord(id) {
+        const records = getRecords().filter(r => r.id !== id);
+        setRecords(records);
+        renderRecords();
+        showToast('已删除', 'info');
+    }
+
+    /** 清空所有记录 */
+    function confirmClearAll() {
+        showConfirm('确定要清空所有记录吗？\n此操作不可撤销！', () => {
+            setRecords([]);
+            renderRecords();
+            showToast('已清空所有记录', 'info');
+        });
+    }
+
+    /** 加载并渲染记录 */
+    function loadRecords() {
+        renderRecords();
+    }
+
+    // ============ Excel 导出 ============
+
+    function exportExcel() {
+        const records = getRecords();
+        if (records.length === 0) {
+            showToast('暂无记录可导出', 'error');
+            return;
+        }
+
+        // 构建数据行
+        const rows = records.map((r, i) => ({
+            '序号': i + 1,
+            '日期': r.date,
+            '编号': r.number,
+            '货物名称': r.cargo,
+            '净重(kg)': r.weight,
+            '车牌号': r.plate,
+            '规格型号': r.spec,
+            '录入时间': r.createdAt ? new Date(r.createdAt).toLocaleString('zh-CN') : '',
+        }));
+
+        // 使用 SheetJS 生成 xlsx
+        const ws = XLSX.utils.json_to_sheet(rows);
+
+        // 设置列宽
+        ws['!cols'] = [
+            { wch: 6 },   // 序号
+            { wch: 14 },  // 日期
+            { wch: 18 },  // 编号
+            { wch: 10 },  // 货物名称
+            { wch: 12 },  // 净重
+            { wch: 12 },  // 车牌号
+            { wch: 12 },  // 规格型号
+            { wch: 20 },  // 录入时间
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '过磅单记录');
+
+        // 生成文件名（带日期）
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+        const fileName = `过磅单记录_${dateStr}.xlsx`;
+
+        XLSX.writeFile(wb, fileName);
+        showToast(`✅ 已导出 ${records.length} 条记录`, 'success');
+    }
+
+    // ============ UI 渲染 ============
+
+    /** 渲染记录列表 */
+    function renderRecords() {
+        const records = getRecords();
+        const container = DOM.recordsList;
+
+        // 更新统计
+        DOM.totalCount.textContent = records.length;
+        const tw = records.reduce((sum, r) => sum + (parseFloat(r.weight) || 0), 0);
+        DOM.totalWeight.textContent = tw.toLocaleString();
+
+        if (records.length === 0) {
+            container.innerHTML = '<p class="empty-tip">暂无记录，请拍照开始录入</p>';
+            return;
+        }
+
+        // 按时间倒序显示（最新的在最前面）
+        const sorted = [...records].reverse();
+
+        container.innerHTML = sorted.map((r, idx) => `
+            <div class="record-card">
+                <div class="record-top">
+                    <span class="record-number">#${records.length - idx}  ${r.number || '无编号'}</span>
+                    <span class="record-date">${r.date || '无日期'}</span>
+                    <button class="btn-delete-record" onclick="deleteRecord(${r.id})">删除</button>
+                </div>
+                <div class="record-fields">
+                    <div class="record-field">
+                        <div class="rf-label">货物名称</div>
+                        <div class="rf-value">${r.cargo || '-'}</div>
+                    </div>
+                    <div class="record-field">
+                        <div class="rf-label">净重</div>
+                        <div class="rf-value">${r.weight ? r.weight + ' kg' : '-'}</div>
+                    </div>
+                    <div class="record-field">
+                        <div class="rf-label">车牌号</div>
+                        <div class="rf-value">${r.plate || '-'}</div>
+                    </div>
+                    <div class="record-field">
+                        <div class="rf-label">规格型号</div>
+                        <div class="rf-value">${r.spec || '-'}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    /** 控制区域显示/隐藏 */
+    function showSection(name) {
+        DOM.secCamera.classList.toggle('hidden', name !== 'camera');
+        DOM.secProgress.classList.toggle('hidden', name !== 'progress');
+        DOM.secPreview.classList.toggle('hidden', name !== 'preview');
+        DOM.secResult.classList.toggle('hidden', name !== 'result');
+    }
+
+    /** 重置回拍照界面 */
+    function resetToCamera() {
+        clearFields();
+        currentImageData = null;
+        batchQueue = [];
+        showSection('camera');
+        // 滚动到顶部
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /** 更新进度条 */
+    function updateProgress(text, percent) {
+        DOM.progressText.textContent = text;
+        DOM.progressFill.style.width = Math.min(100, Math.max(0, percent)) + '%';
+    }
+
+    // ============ Toast 通知 ============
+
+    let toastTimer = null;
+
+    function showToast(msg, type = 'info') {
+        const t = DOM.toast;
+        t.textContent = msg;
+        t.className = 'toast ' + type + ' show';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            t.classList.remove('show');
+        }, 2500);
+    }
+
+    // ============ 确认对话框 ============
+
+    function showConfirm(message, onConfirm) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-box">
+                <p>${message.replace(/\n/g, '<br>')}</p>
+                <div class="modal-buttons">
+                    <button class="modal-cancel">取消</button>
+                    <button class="modal-confirm">确认</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('.modal-cancel').addEventListener('click', () => {
+            overlay.remove();
+        });
+        overlay.querySelector('.modal-confirm').addEventListener('click', () => {
+            overlay.remove();
+            onConfirm();
+        });
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.remove();
+        });
+    }
+
+    // ============ PWA 支持 ============
+    // 注意：PWA 需要在 HTTPS 环境下才能生效
+    // 如果需要完整PWA支持，请将此文件部署到HTTPS服务器
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            // PWA 功能：仅提示用户添加到桌面
+            // 完整 Service Worker 需要 HTTPS 服务器支持
+        });
+    }
+
+    // 监听添加到桌面提示
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // 可以在此显示"添加到桌面"按钮
+    });
+
+    </script>
+</body>
+</html>
